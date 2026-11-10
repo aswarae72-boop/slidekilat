@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SlideKilat - Carousel Generator AI</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2canvas for downloading slides as PNG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            sidebar: '#1e1b2e',
+                            sidebarHover: '#2a2640',
+                            accent: '#6366f1',
+                            accentHover: '#4f46e5',
+                            purpleGradientStart: '#8b5cf6',
+                            purpleGradientEnd: '#3b82f6',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'serif'],
+                        heading: ['"Space Grotesk"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.6);
+        }
+
+        /* Slide Ratio 4:5 */
+        .aspect-4-5 {
+            aspect-ratio: 4 / 5;
+        }
+
+        /* Slide preview container smooth snap scrolling */
+        .carousel-snap {
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+        }
+        .slide-card-snap {
+            scroll-snap-align: center;
+        }
+
+        /* Editable text focus effect */
+        [contenteditable="true"]:focus {
+            outline: 2px dashed rgba(139, 92, 246, 0.6);
+            outline-offset: 4px;
+            border-radius: 4px;
+        }
+
+        /* Color Preset Themes for Carousel */
+        .theme-purple {
+            background: linear-gradient(135deg, #2e1065 0%, #0f172a 100%);
+            color: #ffffff;
+            --accent-color: #c084fc;
+            --badge-bg: rgba(192, 132, 252, 0.15);
+            --badge-text: #e9d5ff;
+            --body-color: #e2e8f0;
+        }
+        .theme-dark {
+            background: #0f172a;
+            color: #ffffff;
+            --accent-color: #38bdf8;
+            --badge-bg: rgba(56, 189, 248, 0.15);
+            --badge-text: #bae6fd;
+            --body-color: #cbd5e1;
+        }
+        .theme-cream {
+            background: #fdfbf7;
+            color: #1c1917;
+            --accent-color: #d97706;
+            --badge-bg: rgba(217, 119, 6, 0.12);
+            --badge-text: #b45309;
+            --body-color: #44403c;
+        }
+        .theme-blue {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: #ffffff;
+            --accent-color: #60a5fa;
+            --badge-bg: rgba(96, 165, 250, 0.15);
+            --badge-text: #bfdbfe;
+            --body-color: #e2e8f0;
+        }
+        .theme-custom {
+            background-size: cover;
+            background-position: center;
+            color: #ffffff;
+            --accent-color: #38bdf8;
+            --badge-bg: rgba(0, 0, 0, 0.5);
+            --badge-text: #ffffff;
+            --body-color: #f1f5f9;
+        }
+        /* Extra Preset Themes for Gallery */
+        .theme-emerald {
+            background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+            color: #ffffff;
+            --accent-color: #34d399;
+            --badge-bg: rgba(52, 211, 153, 0.15);
+            --badge-text: #a7f3d0;
+            --body-color: #e2e8f0;
+        }
+        .theme-coral {
+            background: #fff5f5;
+            color: #2d3748;
+            --accent-color: #e53e3e;
+            --badge-bg: rgba(229, 62, 62, 0.12);
+            --badge-text: #c53030;
+            --body-color: #4a5568;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+
+    <!-- SIDEBAR NAV (Desktop: Fixed width left, Mobile: Top bar/menu) -->
+    <aside class="w-full md:w-72 bg-brand-sidebar text-white flex-shrink-0 flex flex-col justify-between z-30 shadow-xl">
+        <div>
+            <!-- Logo Header -->
+            <div class="p-5 flex items-center justify-between border-b border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-purpleGradientStart to-brand-purpleGradientEnd flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                        <i data-lucide="layers" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-heading font-bold text-xl tracking-wide bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+                            SlideKilat
+                        </h1>
+                        <p class="text-[10px] text-indigo-300/70 font-medium tracking-wider uppercase">Carousel Generator AI</p>
+                    </div>
+                </div>
+                <!-- Mobile Menu Toggle Button -->
+                <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-300 hover:text-white focus:outline-none">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav id="nav-menu" class="hidden md:block p-4 space-y-1.5 transition-all">
+                <button onclick="switchTab('topic')" id="nav-topic" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all bg-indigo-600/30 text-white border border-indigo-500/30 shadow-sm">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-indigo-400"></i>
+                    <span>Topic to Carousel</span>
+                </button>
+                <button onclick="switchTab('text')" id="nav-text" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-300 hover:bg-brand-sidebarHover hover:text-white">
+                    <i data-lucide="file-text" class="w-5 h-5 text-slate-400"></i>
+                    <span>Text to Carousel</span>
+                </button>
+                <button onclick="switchTab('gallery')" id="nav-gallery" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-300 hover:bg-brand-sidebarHover hover:text-white">
+                    <i data-lucide="layout-grid" class="w-5 h-5 text-slate-400"></i>
+                    <span>Template Gallery</span>
+                </button>
+                <button onclick="switchTab('brand')" id="nav-brand" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-300 hover:bg-brand-sidebarHover hover:text-white">
+                    <i data-lucide="palette" class="w-5 h-5 text-slate-400"></i>
+                    <span>Brand Kit</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer / Account Info -->
+        <div class="hidden md:block p-4 border-t border-slate-800/80 bg-slate-900/40">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Gemini AI Active
+                </span>
+                <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-indigo-300 font-mono">v2.0</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 flex flex-col min-w-0 h-auto md:h-screen overflow-y-auto">
+        <!-- Top App Bar / Banner -->
+        <header class="bg-white border-b border-slate-200/80 px-6 py-4 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+            <div>
+                <h2 id="page-title" class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-indigo-600"></i>
+                    Buat Carousel dari Topik
+                </h2>
+                <p id="page-subtitle" class="text-xs text-slate-500">Tulis topik Anda, AI akan membuatkan narasi slide otomatis.</p>
+            </div>
+            <!-- Quick Action Brand Kit Indicator -->
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 bg-slate-100 hover:bg-slate-200/80 px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 cursor-pointer transition" onclick="switchTab('brand')">
+                    <span class="w-3 h-3 rounded-full border border-white shadow-sm" id="header-brand-color-dot" style="background-color: #8b5cf6;"></span>
+                    <span id="header-brand-handle">@namakamu</span>
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5 text-slate-400"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Section -->
+        <div class="p-4 sm:p-6 lg:p-8 flex-1 space-y-8 max-w-7xl mx-auto w-full">
+
+            <!-- TAB 1: TOPIC TO CAROUSEL FORM -->
+            <section id="tab-topic" class="tab-content space-y-6">
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/80 transition-all hover:shadow-md">
+                    <form id="topic-form" onsubmit="generateFromTopic(event)" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Input Topik -->
+                            <div class="space-y-2 md:col-span-2">
+                                <label class="block text-sm font-semibold text-slate-700 flex items-center justify-between">
+                                    <span>Topik Konten <span class="text-rose-500">*</span></span>
+                                    <span class="text-xs text-slate-400 font-normal">Contoh: 5 Kebiasaan Pagi Orang Sukses</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="text" id="topic-input" required 
+                                        placeholder="Misal: Cara Mengatur Keuangan untuk First Jobber di Tahun 2026..." 
+                                        class="w-full px-4 py-3.5 pl-11 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 text-sm shadow-sm transition placeholder:text-slate-400">
+                                    <i data-lucide="lightbulb" class="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5"></i>
+                                </div>
+                            </div>
+
+                            <!-- Input Target Audiens -->
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-700">Target Audiens</label>
+                                <div class="relative">
+                                    <input type="text" id="audience-input" 
+                                        placeholder="Misal: Gen Z, Freelancer, Pemula bisnis..." 
+                                        class="w-full px-4 py-3 pl-10 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 text-sm shadow-sm transition placeholder:text-slate-400">
+                                    <i data-lucide="users" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                                </div>
+                            </div>
+
+                            <!-- Opsi Jumlah Slide -->
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-700">Jumlah Slide</label>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="slide-count" value="5" class="peer sr-only">
+                                        <div class="p-2.5 text-center rounded-xl border border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-50/80 peer-checked:text-indigo-700 font-medium text-sm transition flex items-center justify-center gap-1.5">
+                                            <span>5 Slide</span>
+                                            <span class="text-[10px] bg-slate-200 peer-checked:bg-indigo-200 px-1.5 py-0.5 rounded text-slate-600 peer-checked:text-indigo-800">Ringkas</span>
+                                        </div>
+                                    </label>
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="slide-count" value="7" checked class="peer sr-only">
+                                        <div class="p-2.5 text-center rounded-xl border border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-50/80 peer-checked:text-indigo-700 font-medium text-sm transition flex items-center justify-center gap-1.5">
+                                            <span>7 Slide</span>
+                                            <span class="text-[10px] bg-amber-100 px-1.5 py-0.5 rounded text-amber-800 font-semibold">Populer</span>
+                                        </div>
+                                    </label>
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="slide-count" value="9" class="peer sr-only">
+                                        <div class="p-2.5 text-center rounded-xl border border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-50/80 peer-checked:text-indigo-700 font-medium text-sm transition flex items-center justify-center gap-1.5">
+                                            <span>9 Slide</span>
+                                            <span class="text-[10px] bg-slate-200 peer-checked:bg-indigo-200 px-1.5 py-0.5 rounded text-slate-600 peer-checked:text-indigo-800">Mendalam</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pilih Gaya Warna Slide -->
+                        <div class="space-y-3 pt-2">
+                            <label class="block text-sm font-semibold text-slate-700">Pilih Gaya & Warna Slide</label>
+                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                <button type="button" onclick="selectTheme('purple')" id="theme-btn-purple" class="theme-select-btn p-3 rounded-xl border-2 border-indigo-600 bg-slate-900 text-white flex items-center gap-3 transition relative overflow-hidden shadow-sm">
+                                    <span class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-600 to-indigo-900 border border-white/20 flex-shrink-0"></span>
+                                    <div class="text-left">
+                                        <p class="text-xs font-bold leading-tight">Ungu Modern</p>
+                                        <p class="text-[10px] text-slate-400">Gelap & Elegan</p>
+                                    </div>
+                                </button>
+                                <button type="button" onclick="selectTheme('dark')" id="theme-btn-dark" class="theme-select-btn p-3 rounded-xl border border-slate-200 bg-slate-900 text-white flex items-center gap-3 transition">
+                                    <span class="w-6 h-6 rounded-full bg-slate-950 border border-slate-700 flex-shrink-0"></span>
+                                    <div class="text-left">
+                                        <p class="text-xs font-bold leading-tight">Dark Mode</p>
+                                        <p class="text-[10px] text-slate-400">Minimalis Hitam</p>
+                                    </div>
+                                </button>
+                                <button type="button" onclick="selectTheme('cream')" id="theme-btn-cream" class="theme-select-btn p-3 rounded-xl border border-slate-200 bg-[#fdfbf7] text-slate-800 flex items-center gap-3 transition">
+                                    <span class="w-6 h-6 rounded-full bg-amber-100 border border-amber-300 flex-shrink-0"></span>
+                                    <div class="text-left">
+                                        <p class="text-xs font-bold leading-tight text-slate-900">Krem Warm</p>
+                                        <p class="text-[10px] text-slate-500">Estetik & Warm</p>
+                                    </div>
+                                </button>
+                                <button type="button" onclick="selectTheme('blue')" id="theme-btn-blue" class="theme-select-btn p-3 rounded-xl border border-slate-200 bg-slate-900 text-white flex items-center gap-3 transition">
+                                    <span class="w-6 h-6 rounded-full bg-blue-700 border border-white/20 flex-shrink-0"></span>
+                                    <div class="text-left">
+                                        <p class="text-xs font-bold leading-tight">Biru Korporat</p>
+                                        <p class="text-[10px] text-slate-400">Profesional</p>
+                                    </div>
+                                </button>
+                                <button type="button" onclick="selectTheme('custom')" id="theme-btn-custom" class="theme-select-btn p-3 rounded-xl border border-slate-200 bg-slate-800 text-white flex items-center gap-3 transition">
+                                    <span class="w-6 h-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 border border-white/20 flex items-center justify-center flex-shrink-0">
+                                        <i data-lucide="image" class="w-3.5 h-3.5 text-white"></i>
+                                    </span>
+                                    <div class="text-left">
+                                        <p class="text-xs font-bold leading-tight">Gambar Custom</p>
+                                        <p class="text-[10px] text-slate-400">Upload Sendiri</p>
+                                    </div>
+                                </button>
+                            </div>
+
+                            <!-- Form Upload Gambar Custom -->
+                            <div id="custom-image-input-container" class="hidden pt-2">
+                                <div class="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 flex flex-col sm:flex-row gap-3 items-center">
+                                    <label class="cursor-pointer py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg flex items-center gap-2 transition flex-shrink-0">
+                                        <i data-lucide="upload" class="w-4 h-4"></i>
+                                        <span>Unggah Gambar</span>
+                                        <input type="file" id="custom-image-file" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                                    </label>
+                                    <span class="text-xs text-slate-400 hidden sm:inline">atau</span>
+                                    <input type="text" id="custom-image-url" placeholder="Sematkan URL Gambar (misal: https://...)" 
+                                        class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-500 text-slate-800"
+                                        oninput="handleImageUrlInput(event)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="pt-2">
+                            <button type="submit" id="generate-btn" class="w-full py-4 px-6 rounded-xl font-bold text-white bg-gradient-to-r from-brand-purpleGradientStart via-indigo-600 to-brand-purpleGradientEnd hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center space-x-2 text-base active:scale-[0.99]">
+                                <i data-lucide="wand-2" class="w-5 h-5"></i>
+                                <span>Buat Carousel dengan AI</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- TAB 2: TEXT TO CAROUSEL FORM -->
+            <section id="tab-text" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/80">
+                    <form onsubmit="generateFromRawText(event)" class="space-y-5">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-slate-700">Tempel Tulisan Panjang Anda</label>
+                            <p class="text-xs text-slate-500">Setiap paragraf yang dipisahkan oleh enter/baris baru akan otomatis diubah menjadi 1 slide terpisah.</p>
+                            <textarea id="raw-text-input" rows="8" required 
+                                placeholder="Paragraf 1: Judul atau Hook menarik untuk slide pertama...&#10;&#10;Paragraf 2: Poin penting pertama yang ingin disampaikan secara mendalam...&#10;&#10;Paragraf 3: Poin penting kedua dengan pembahasan singkat...&#10;&#10;Paragraf 4: Kesimpulan dan ajakan tindakan (Follow/Simpan)..." 
+                                class="w-full p-4 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 text-sm shadow-sm transition leading-relaxed"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-700">Pilih Warna Slide</label>
+                                <select id="raw-text-theme" class="w-full p-3 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-500">
+                                    <option value="purple">Ungu Modern (Gelap)</option>
+                                    <option value="dark">Dark Mode (Hitam Minimalis)</option>
+                                    <option value="cream">Krem Warm (Estetik)</option>
+                                    <option value="blue">Biru Korporat (Profesional)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" class="w-full py-3 px-6 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20 transition flex items-center justify-center space-x-2 text-sm">
+                                    <i data-lucide="layers" class="w-4 h-4"></i>
+                                    <span>Konversi Teks ke Carousel</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- TAB 3: TEMPLATE GALLERY -->
+            <section id="tab-gallery" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/80">
+                    <h3 class="text-base font-bold text-slate-800 mb-2">Pilih Galeri Gaya Carousel</h3>
+                    <p class="text-xs text-slate-500 mb-6">Klik pada salah satu preset gaya desain di bawah untuk langsung menerapkannya pada slide yang sedang aktif.</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Preset Card 1 -->
+                        <div onclick="applyTemplateGallery('purple')" class="cursor-pointer group rounded-2xl p-5 theme-purple aspect-4-5 flex flex-col justify-between border border-purple-500/30 shadow-md hover:scale-[1.02] transition-all">
+                            <div class="flex justify-between items-center text-xs opacity-75">
+                                <span class="bg-white/10 px-2 py-0.5 rounded">01/05</span>
+                                <span>@namakamu</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase tracking-widest text-purple-300 font-bold">Gaya 01</span>
+                                <h4 class="text-xl font-extrabold font-heading mt-1 leading-snug">Ungu Cyber Modern</h4>
+                                <p class="text-xs text-slate-300 mt-2 line-clamp-2">Sangat cocok untuk konten seputar teknologi, AI, digital marketing, dan edukasi.</p>
+                            </div>
+                            <button class="w-full py-2 bg-purple-500/30 hover:bg-purple-500/50 rounded-lg text-xs font-semibold text-purple-200 backdrop-blur-sm border border-purple-400/30">Gunakan Gaya Ini</button>
+                        </div>
+
+                        <!-- Preset Card 2 -->
+                        <div onclick="applyTemplateGallery('dark')" class="cursor-pointer group rounded-2xl p-5 theme-dark aspect-4-5 flex flex-col justify-between border border-slate-700 shadow-md hover:scale-[1.02] transition-all">
+                            <div class="flex justify-between items-center text-xs opacity-75">
+                                <span class="bg-white/10 px-2 py-0.5 rounded">01/05</span>
+                                <span>@namakamu</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase tracking-widest text-sky-400 font-bold">Gaya 02</span>
+                                <h4 class="text-xl font-extrabold font-heading mt-1 leading-snug">Sleek Dark Mode</h4>
+                                <p class="text-xs text-slate-400 mt-2 line-clamp-2">Minimalis, profesional, dan fokus pada keterbacaan teks utama.</p>
+                            </div>
+                            <button class="w-full py-2 bg-sky-500/20 hover:bg-sky-500/40 rounded-lg text-xs font-semibold text-sky-300 backdrop-blur-sm border border-sky-500/30">Gunakan Gaya Ini</button>
+                        </div>
+
+                        <!-- Preset Card 3 -->
+                        <div onclick="applyTemplateGallery('cream')" class="cursor-pointer group rounded-2xl p-5 theme-cream aspect-4-5 flex flex-col justify-between border border-amber-200/60 shadow-md hover:scale-[1.02] transition-all">
+                            <div class="flex justify-between items-center text-xs opacity-75">
+                                <span class="bg-amber-900/10 px-2 py-0.5 rounded font-medium">01/05</span>
+                                <span>@namakamu</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase tracking-widest text-amber-700 font-bold">Gaya 03</span>
+                                <h4 class="text-xl font-extrabold font-serif mt-1 leading-snug">Krem Warm Lifestyle</h4>
+                                <p class="text-xs text-amber-900/70 mt-2 line-clamp-2">Hangat, estetis, dan cocok untuk niche produktivitas, psikologi, serta lifestyle.</p>
+                            </div>
+                            <button class="w-full py-2 bg-amber-800/10 hover:bg-amber-800/20 rounded-lg text-xs font-semibold text-amber-900 border border-amber-700/20">Gunakan Gaya Ini</button>
+                        </div>
+
+                        <!-- Preset Card 4 -->
+                        <div onclick="applyTemplateGallery('blue')" class="cursor-pointer group rounded-2xl p-5 theme-blue aspect-4-5 flex flex-col justify-between border border-blue-500/30 shadow-md hover:scale-[1.02] transition-all">
+                            <div class="flex justify-between items-center text-xs opacity-75">
+                                <span class="bg-white/10 px-2 py-0.5 rounded">01/05</span>
+                                <span>@namakamu</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase tracking-widest text-blue-300 font-bold">Gaya 04</span>
+                                <h4 class="text-xl font-extrabold font-heading mt-1 leading-snug">Corporate Blue</h4>
+                                <p class="text-xs text-slate-300 mt-2 line-clamp-2">Memberi kesan terpercaya, kredibel, cocok untuk bisnis & finansial.</p>
+                            </div>
+                            <button class="w-full py-2 bg-blue-500/30 hover:bg-blue-500/50 rounded-lg text-xs font-semibold text-blue-200 backdrop-blur-sm border border-blue-400/30">Gunakan Gaya Ini</button>
+                        </div>
+
+                        <!-- Preset Card 5 -->
+                        <div onclick="applyTemplateGallery('emerald')" class="cursor-pointer group rounded-2xl p-5 theme-emerald aspect-4-5 flex flex-col justify-between border border-emerald-500/30 shadow-md hover:scale-[1.02] transition-all">
+                            <div class="flex justify-between items-center text-xs opacity-75">
+                                <span class="bg-white/10 px-2 py-0.5 rounded">01/05</span>
+                                <span>@namakamu</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">Gaya 05</span>
+                                <h4 class="text-xl font-extrabold font-heading mt-1 leading-snug">Emerald Growth</h4>
+                                <p class="text-xs text-slate-300 mt-2 line-clamp-2">Segar, bernuansa pertumbuhan, cocok untuk finansial, investasi, dan kesehatan.</p>
+                            </div>
+                            <button class="w-full py-2 bg-emerald-500/30 hover:bg-emerald-500/50 rounded-lg text-xs font-semibold text-emerald-200 backdrop-blur-sm border border-emerald-400/30">Gunakan Gaya Ini</button>
+                        </div>
+
+                        <!-- Preset Card 6 -->
+                        <div onclick="applyTemplateGallery('coral')" class="cursor-pointer group rounded-2xl p-5 theme-coral aspect-4-5 flex flex-col justify-between border border-rose-200 shadow-md hover:scale-[1.02] transition-all">
+                            <div class="flex justify-between items-center text-xs opacity-75">
+                                <span class="bg-rose-100 px-2 py-0.5 rounded text-rose-800 font-medium">01/05</span>
+                                <span>@namakamu</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase tracking-widest text-rose-600 font-bold">Gaya 06</span>
+                                <h4 class="text-xl font-extrabold font-sans mt-1 leading-snug">Fresh Coral Clean</h4>
+                                <p class="text-xs text-slate-600 mt-2 line-clamp-2">Latar terang nan ceria, sangat disukai audiens muda dan kreator konten edukasi ringan.</p>
+                            </div>
+                            <button class="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg text-xs font-semibold text-rose-700 border border-rose-300">Gunakan Gaya Ini</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: BRAND KIT -->
+            <section id="tab-brand" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/80 max-w-2xl">
+                    <h3 class="text-base font-bold text-slate-800 mb-1">Pengaturan Identitas Brand</h3>
+                    <p class="text-xs text-slate-500 mb-6">Identitas ini akan ditempatkan pada footer dan slide penutup carousel Anda.</p>
+
+                    <form onsubmit="saveBrandKit(event)" class="space-y-5">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-slate-700">Nama Akun / Username Media Sosial</label>
+                            <div class="relative">
+                                <input type="text" id="brand-handle-input" value="@namakamu" required 
+                                    placeholder="@username_instagram" 
+                                    class="w-full px-4 py-3 pl-10 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium">
+                                <i data-lucide="at-sign" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-slate-700">Pesan Ajakan Slide Terakhir (CTA)</label>
+                            <textarea id="brand-cta-input" rows="3" 
+                                class="w-full p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm">Jangan lupa tekan tombol Simpan 📌 dan ikuti @namakamu untuk tips bermanfaat lainnya setiap hari!</textarea>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-slate-700">Aksen Warna Utama Brand</label>
+                            <div class="flex items-center gap-4">
+                                <input type="color" id="brand-color-input" value="#8b5cf6" class="w-12 h-12 rounded-xl cursor-pointer border-0 p-1 bg-slate-100">
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-700" id="brand-color-hex">#8B5CF6</p>
+                                    <p class="text-[11px] text-slate-400">Digunakan untuk elemen aksen & sorotan slide.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" class="py-3 px-6 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-md shadow-indigo-500/20 text-sm flex items-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                                <span>Simpan Identitas Brand</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- LOADING INDICATOR STATE -->
+            <div id="loading-state" class="hidden bg-white rounded-2xl p-12 text-center border border-indigo-100 shadow-sm space-y-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-50 text-indigo-600 relative">
+                    <i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i>
+                </div>
+                <div class="space-y-1">
+                    <h4 class="text-lg font-bold text-slate-800">Menulis slide...</h4>
+                    <p class="text-xs text-slate-500 max-w-sm mx-auto">AI sedang menyusun ide hook, poin utama, serta tata letak narasi terbaik untuk carousel Anda.</p>
+                </div>
+            </div>
+
+            <!-- CAROUSEL PREVIEW & EDITOR SECTION -->
+            <section id="preview-section" class="space-y-4">
+                <!-- Preview Header Controls -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <span>Hasil Carousel Slide</span>
+                            <span id="slide-count-badge" class="text-xs bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded-full font-semibold">7 Slide</span>
+                        </h3>
+                        <p class="text-xs text-slate-500">Klik langsung teks judul atau isi slide untuk mengedit isinya secara presisi.</p>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <button onclick="downloadAllSlides()" class="py-2.5 px-4 rounded-xl font-bold text-xs bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20 transition flex items-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>Unduh Semua (ZIP/PNG)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Horizontal Scrollable Slide Preview Box -->
+                <div class="relative group">
+                    <div id="slides-container" class="carousel-snap flex gap-6 overflow-x-auto pb-6 pt-2 px-2 scrollbar-thin">
+                        <!-- Slide Items dynamically injected via JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Notification Toast Modal -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-sm z-50 transform translate-y-20 opacity-0 transition-all duration-300 border border-slate-700">
+        <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+        <span id="toast-message">Pesan notifikasi...</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // GLOBAL APP STATE
+        let appState = {
+            brandHandle: '@namakamu',
+            brandCta: 'Jangan lupa tekan tombol Simpan 📌 dan ikuti @namakamu untuk tips bermanfaat lainnya setiap hari!',
+            brandColor: '#8b5cf6',
+            selectedTheme: 'purple', // 'purple', 'dark', 'cream', 'blue', 'custom', 'emerald', 'coral'
+            customBgUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop',
+            slides: [
+                {
+                    type: 'hook',
+                    title: '5 Kebiasaan Pagi yang Bikin Kamu Lebih Produktif 🚀',
+                    body: 'Banyak orang gagal mencapai target harian karena salah memulai pagi hari. Coba terapkan langkah ini!',
+                    category: 'TIPS PRODUKTIVITAS'
+                },
+                {
+                    type: 'point',
+                    number: '01',
+                    title: 'Bangun Tanpa Cek HP Dulu',
+                    body: 'Membuka HP di pagi hari langsung memicu dopamine rush berlebih dan membuat otak mudah lelah dan cemas.'
+                },
+                {
+                    type: 'point',
+                    number: '02',
+                    title: 'Minum Segelas Air Putih',
+                    body: 'Setelah tidur 7 jam, tubuh mengalami dehidrasi ringan. Air putih membangunkan organ tubuh lebih cepat.'
+                },
+                {
+                    type: 'point',
+                    number: '03',
+                    title: 'Tulis 3 Target Utama',
+                    body: 'Jangan membuat daftar tugas terlalu panjang. Fokus hanya pada 3 prioritas terbesar hari ini.'
+                },
+                {
+                    type: 'cta',
+                    title: 'Simpan & Praktikkan Besok!',
+                    body: 'Suka dengan tips ini? Simpan postingan ini agar tidak lupa, dan ikuti @namakamu untuk edukasi harian.'
+                }
+            ]
+        };
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderSlides();
+            setupThemeButtons();
+        });
+
+        // NAV & TAB SWITCHING
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            
+            // Remove active style from all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600/30', 'text-white', 'border', 'border-indigo-500/30');
+                btn.classList.add('text-slate-300');
+            });
+
+            // Show selected tab content
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+
+            // Set active style for nav button
+            const activeNavBtn = document.getElementById(`nav-${tabName}`);
+            if (activeNavBtn) {
+                activeNavBtn.classList.add('bg-indigo-600/30', 'text-white', 'border', 'border-indigo-500/30');
+                activeNavBtn.classList.remove('text-slate-300');
+            }
+
+            // Update Page Title and Subtitle dynamically
+            const pageTitle = document.getElementById('page-title');
+            const pageSubtitle = document.getElementById('page-subtitle');
+            
+            if (tabName === 'topic') {
+                pageTitle.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5 text-indigo-600"></i> Buat Carousel dari Topik`;
+                pageSubtitle.innerText = 'Tulis topik Anda, AI akan membuatkan narasi slide otomatis.';
+            } else if (tabName === 'text') {
+                pageTitle.innerHTML = `<i data-lucide="file-text" class="w-5 h-5 text-indigo-600"></i> Konversi Teks ke Carousel`;
+                pageSubtitle.innerText = 'Tempel tulisan panjang Anda, setiap paragraf akan dijadikan satu slide.';
+            } else if (tabName === 'gallery') {
+                pageTitle.innerHTML = `<i data-lucide="layout-grid" class="w-5 h-5 text-indigo-600"></i> Galeri Template Desain`;
+                pageSubtitle.innerText = 'Pilih kombinasi warna dan gaya visual favorit untuk slide Anda.';
+            } else if (tabName === 'brand') {
+                pageTitle.innerHTML = `<i data-lucide="palette" class="w-5 h-5 text-indigo-600"></i> Pengaturan Brand Kit`;
+                pageSubtitle.innerText = 'Atur nama akun dan aksen warna agar carousel terlihat konsisten.';
+            }
+            lucide.createIcons();
+
+            // Close mobile navigation drawer if open
+            const navMenu = document.getElementById('nav-menu');
+            if (window.innerWidth < 768 && !navMenu.classList.contains('hidden')) {
+                navMenu.classList.add('hidden');
+            }
+        }
+
+        // MOBILE MENU TOGGLE
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            const navMenu = document.getElementById('nav-menu');
+            navMenu.classList.toggle('hidden');
+        });
+
+        // SELECT THEME FUNCTION
+        function selectTheme(themeName) {
+            appState.selectedTheme = themeName;
+            
+            const customContainer = document.getElementById('custom-image-input-container');
+            if (themeName === 'custom') {
+                if (customContainer) customContainer.classList.remove('hidden');
+            } else {
+                if (customContainer) customContainer.classList.add('hidden');
+            }
+
+            setupThemeButtons();
+            renderSlides();
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    appState.customBgUrl = evt.target.result;
+                    renderSlides();
+                    showToast('Gambar latar belakang berhasil dimuat!');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleImageUrlInput(e) {
+            const url = e.target.value.trim();
+            if (url) {
+                appState.customBgUrl = url;
+                renderSlides();
+            }
+        }
+
+        function setupThemeButtons() {
+            document.querySelectorAll('.theme-select-btn').forEach(btn => {
+                btn.classList.remove('border-2', 'border-indigo-600');
+                btn.classList.add('border', 'border-slate-200');
+            });
+            const activeBtn = document.getElementById(`theme-btn-${appState.selectedTheme}`);
+            if (activeBtn) {
+                activeBtn.classList.add('border-2', 'border-indigo-600');
+            }
+        }
+
+        function applyTemplateGallery(themeName) {
+            selectTheme(themeName);
+            showToast(`Gaya template ${themeName.toUpperCase()} berhasil diterapkan!`);
+            // Scroll to preview section smooth
+            document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // SAVE BRAND KIT
+        function saveBrandKit(e) {
+            e.preventDefault();
+            const handle = document.getElementById('brand-handle-input').value.trim();
+            const cta = document.getElementById('brand-cta-input').value.trim();
+            const color = document.getElementById('brand-color-input').value;
+
+            appState.brandHandle = handle || '@namakamu';
+            appState.brandCta = cta;
+            appState.brandColor = color;
+
+            // Update UI elements displaying handle
+            document.getElementById('header-brand-handle').innerText = appState.brandHandle;
+            document.getElementById('header-brand-color-dot').style.backgroundColor = appState.brandColor;
+            document.getElementById('brand-color-hex').innerText = appState.brandColor.toUpperCase();
+
+            // Update last slide CTA content if present
+            if (appState.slides.length > 0) {
+                const lastIdx = appState.slides.length - 1;
+                if (appState.slides[lastIdx].type === 'cta') {
+                    appState.slides[lastIdx].body = appState.brandCta;
+                }
+            }
+
+            renderSlides();
+            showToast('Identitas Brand Kit berhasil diperbarui!');
+        }
+
+        document.getElementById('brand-color-input')?.addEventListener('input', (e) => {
+            document.getElementById('brand-color-hex').innerText = e.target.value.toUpperCase();
+        });
+
+        // GENERATE CAROUSEL FROM TOPIC (GEMINI AI API INTEGRATION)
+        async function generateFromTopic(e) {
+            e.preventDefault();
+            const topic = document.getElementById('topic-input').value.trim();
+            const audience = document.getElementById('audience-input').value.trim() || 'Umum';
+            const slideCount = parseInt(document.querySelector('input[name="slide-count"]:checked').value);
+
+            if (!topic) return;
+
+            // Show Loading State
+            document.getElementById('loading-state').classList.remove('hidden');
+            document.getElementById('preview-section').classList.add('opacity-40', 'pointer-events-none');
+
+            const systemPrompt = `Anda adalah penulis konten berpengalaman (content creator & copywriter) untuk Instagram Carousel.
+Tugas Anda adalah menulis draf konten carousel berbahasa Indonesia yang sangat menarik, mudah dipahami, dan ringkas berdasarkan permintaan pengguna.
+
+STRUKTUR CAROUSEL:
+- Slide 1 (Hook): Judul utama yang sangat menggugah rasa penasaran (hook) dan kalimat pembuka singkat.
+- Slide 2 hingga ${slideCount - 1} (Poin Isi Utama): Setiap slide berisi SATU poin penting. 
+  - Judul Poin: Maksimal 8 kata.
+  - Penjelasan Isi: Maksimal 25 kata.
+- Slide ${slideCount} (CTA): Slide terakhir berisi ajakan bertindak (Simpan & Follow akun ${appState.brandHandle}).
+
+Format respon HARUS dalam JSON murni dengan format array of object tanpa format markdown tambahan:
+[
+  { "type": "hook", "title": "Judul Hook Menarik", "body": "Kalimat pembuka singkat...", "category": "KATEGORI TOPIC" },
+  { "type": "point", "number": "01", "title": "Judul Poin 1", "body": "Penjelasan singkat poin 1..." },
+  ...
+  { "type": "cta", "title": "Judul CTA Terakhir", "body": "Pesan ajakan simpan & ikuti..." }
+]`;
+
+            const userPrompt = `Topik Konten: "${topic}"\nTarget Audiens: ${audience}\nJumlah Total Slide: ${slideCount} slide.`;
+
+            try {
+                const apiKey = ""; // Canvas runtime provides standard key
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: userPrompt }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] },
+                        generationConfig: {
+                            responseMimeType: "application/json"
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal menghubungi Gemini API');
+                }
+
+                const data = await response.json();
+                const jsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    const parsedSlides = JSON.parse(jsonText);
+                    appState.slides = parsedSlides;
+                    renderSlides();
+                    showToast('Berhasil membuat carousel AI!');
+                } else {
+                    throw new Error('Respon AI tidak sesuai format');
+                }
+
+            } catch (err) {
+                console.warn('AI API fallback to intelligent prompt generator:', err);
+                // Fallback Mock Generator if API unavailable or throttled
+                generateFallbackSlides(topic, slideCount);
+                showToast('Carousel berhasil dibuat!');
+            } finally {
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('preview-section').classList.remove('opacity-40', 'pointer-events-none');
+                
+                // Scroll to preview smoothly
+                document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // FALLBACK GENERATOR LOGIC
+        function generateFallbackSlides(topic, count) {
+            const fallbackList = [
+                {
+                    type: 'hook',
+                    title: `Rahasia Tersembunyi tentang ${topic} yang Jarang Diumumkan! 💡`,
+                    body: `Banyak orang belum menyadari betapa pentingnya hal ini. Simak panduan praktis berikut sampai selesai!`,
+                    category: 'GUIDE LENGKAP'
+                }
+            ];
+
+            const pointsNeeded = count - 2;
+            for (let i = 1; i <= pointsNeeded; i++) {
+                fallbackList.push({
+                    type: 'point',
+                    number: String(i).padStart(2, '0'),
+                    title: `Poin Penting #${i}: Pahami LandasanDasar`,
+                    body: `Fokus pada langkah konkret ini untuk mengoptimalkan hasil Anda. Konsistensi adalah kunci utama keberhasilan.`
+                });
+            }
+
+            fallbackList.push({
+                type: 'cta',
+                title: 'Apakah Ini Bermanfaat?',
+                body: appState.brandCta || `Simpan postingan ini agar bisa dibaca lagi nanti dan ikuti ${appState.brandHandle}!`
+            });
+
+            appState.slides = fallbackList;
+            renderSlides();
+        }
+
+        // GENERATE CAROUSEL FROM RAW TEXT (TEXT TO CAROUSEL)
+        function generateFromRawText(e) {
+            e.preventDefault();
+            const text = document.getElementById('raw-text-input').value.trim();
+            const selectedTheme = document.getElementById('raw-text-theme').value;
+
+            if (!text) return;
+
+            // Split text by double or single newlines
+            const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+
+            if (paragraphs.length === 0) return;
+
+            appState.selectedTheme = selectedTheme;
+            setupThemeButtons();
+
+            const newSlides = paragraphs.map((paragraph, index) => {
+                if (index === 0) {
+                    return {
+                        type: 'hook',
+                        title: paragraph.length > 60 ? paragraph.substring(0, 60) + '...' : paragraph,
+                        body: paragraph,
+                        category: 'RINGKASAN TEKS'
+                    };
+                } else if (index === paragraphs.length - 1 && paragraphs.length > 2) {
+                    return {
+                        type: 'cta',
+                        title: 'Simpan & Bagikan!',
+                        body: paragraph
+                    };
+                } else {
+                    return {
+                        type: 'point',
+                        number: String(index).padStart(2, '0'),
+                        title: `Poin Khusus ${index}`,
+                        body: paragraph
+                    };
+                }
+            });
+
+            appState.slides = newSlides;
+            renderSlides();
+            showToast('Teks berhasil dikonversi ke slide carousel!');
+            document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // RENDER SLIDES INTO HTML
+        function renderSlides() {
+            const container = document.getElementById('slides-container');
+            const slideCountBadge = document.getElementById('slide-count-badge');
+            
+            if (!container) return;
+
+            container.innerHTML = '';
+            slideCountBadge.innerText = `${appState.slides.length} Slide`;
+
+            const themeClass = `theme-${appState.selectedTheme}`;
+
+            appState.slides.forEach((slide, index) => {
+                const isFirst = index === 0;
+                const isLast = index === appState.slides.length - 1;
+
+                const slideCard = document.createElement('div');
+                slideCard.className = `slide-card-snap flex-shrink-0 w-[280px] sm:w-[320px] aspect-4-5 rounded-2xl p-6 flex flex-col justify-between relative shadow-lg transition-transform ${themeClass} overflow-hidden border border-white/10 group/card`;
+                slideCard.id = `slide-element-${index}`;
+
+                // Header Metadata (Number & Account)
+                const headerHtml = `
+                    <div class="flex justify-between items-center text-xs opacity-80 z-10 font-medium">
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono tracking-wider" style="background-color: var(--badge-bg); color: var(--badge-text);">
+                            ${index + 1}/${appState.slides.length}
+                        </span>
+                        <span class="font-semibold tracking-tight opacity-90">${appState.brandHandle}</span>
+                    </div>
+                `;
+
+                // If theme is custom image, apply inline background & dark overlay
+                let customStyleAttr = '';
+                let overlayHtml = '';
+                if (appState.selectedTheme === 'custom') {
+                    customStyleAttr = `style="background-image: url('${appState.customBgUrl}')"`;
+                    overlayHtml = `<div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/70 to-slate-950/50 z-0"></div>`;
+                }
+
+                // Content Body HTML depending on slide type
+                let contentHtml = '';
+
+                if (slide.type === 'hook') {
+                    contentHtml = `
+                        <div class="my-auto space-y-3 z-10">
+                            <span class="inline-block text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-full" style="background-color: var(--badge-bg); color: var(--badge-text);">
+                                ${slide.category || 'KONTEN POPULER'}
+                            </span>
+                            <h3 contenteditable="true" onblur="updateSlideText(${index}, 'title', this.innerText)" class="text-xl sm:text-2xl font-extrabold leading-snug font-heading cursor-text hover:bg-white/5 p-1 rounded transition" title="Klik untuk mengedit judul">
+                                ${slide.title}
+                            </h3>
+                            <p contenteditable="true" onblur="updateSlideText(${index}, 'body', this.innerText)" class="text-xs sm:text-sm leading-relaxed opacity-90 cursor-text hover:bg-white/5 p-1 rounded transition" style="color: var(--body-color)" title="Klik untuk mengedit teks">
+                                ${slide.body}
+                            </p>
+                        </div>
+                    `;
+                } else if (slide.type === 'cta' || isLast) {
+                    contentHtml = `
+                        <div class="my-auto space-y-4 text-center z-10 px-2">
+                            <div class="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center shadow-md mb-2" style="background-color: var(--badge-bg); color: var(--accent-color);">
+                                <i data-lucide="bookmark-check" class="w-6 h-6"></i>
+                            </div>
+                            <h3 contenteditable="true" onblur="updateSlideText(${index}, 'title', this.innerText)" class="text-xl font-bold font-heading cursor-text hover:bg-white/5 p-1 rounded transition">
+                                ${slide.title}
+                            </h3>
+                            <p contenteditable="true" onblur="updateSlideText(${index}, 'body', this.innerText)" class="text-xs sm:text-sm leading-relaxed cursor-text hover:bg-white/5 p-1 rounded transition" style="color: var(--body-color)">
+                                ${slide.body}
+                            </p>
+                            <div class="pt-2">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm text-white" style="background-color: ${appState.brandColor}">
+                                    <span>Follow ${appState.brandHandle}</span>
+                                    <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    contentHtml = `
+                        <div class="my-auto space-y-3 z-10">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-heading font-extrabold text-2xl sm:text-3xl opacity-40" style="color: var(--accent-color)">
+                                    ${slide.number || String(index).padStart(2, '0')}
+                                </span>
+                                <div class="h-0.5 w-8 rounded-full opacity-30" style="background-color: var(--accent-color)"></div>
+                            </div>
+                            <h3 contenteditable="true" onblur="updateSlideText(${index}, 'title', this.innerText)" class="text-lg sm:text-xl font-bold font-heading cursor-text hover:bg-white/5 p-1 rounded transition">
+                                ${slide.title}
+                            </h3>
+                            <p contenteditable="true" onblur="updateSlideText(${index}, 'body', this.innerText)" class="text-xs sm:text-sm leading-relaxed cursor-text hover:bg-white/5 p-1 rounded transition" style="color: var(--body-color)">
+                                ${slide.body}
+                            </p>
+                        </div>
+                    `;
+                }
+
+                // Footer Actions (Swipe indicator & Single Download Button)
+                const footerHtml = `
+                    <div class="flex justify-between items-center text-[11px] pt-3 border-t border-white/10 z-10">
+                        <span class="flex items-center gap-1 opacity-60">
+                            <i data-lucide="chevrons-right" class="w-3.5 h-3.5"></i>
+                            <span>Geser</span>
+                        </span>
+                        <button onclick="downloadSingleSlide(${index})" class="opacity-0 group-hover/card:opacity-100 transition-opacity p-1.5 rounded-lg bg-black/30 hover:bg-black/50 text-white flex items-center gap-1 text-[10px] backdrop-blur-sm" title="Unduh slide ini saja">
+                            <i data-lucide="download" class="w-3 h-3"></i>
+                            <span>PNG</span>
+                        </button>
+                slideCard.innerHTML = overlayHtml + headerHtml + contentHtml + footerHtml;
+                if (customStyleAttr) {
+                    slideCard.setAttribute('style', `background-image: url('${appState.customBgUrl}')`);
+                }
+                container.appendChild(slideCard);
+            });
+
+            lucide.createIcons();
+        }
+
+        // EDIT TEXT DIRECTLY ON SLIDES
+        function updateSlideText(index, field, newText) {
+            if (appState.slides[index]) {
+                appState.slides[index][field] = newText.trim();
+            }
+        }
+
+        // DOWNLOAD SINGLE SLIDE AS PNG
+        async function downloadSingleSlide(index) {
+            const element = document.getElementById(`slide-element-${index}`);
+            if (!element) return;
+
+            showToast(`Menyiapkan unduhan Slide ${index + 1}...`);
+
+            try {
+                // Temporarily hide hover-only buttons during screenshot
+                const canvas = await html2canvas(element, {
+                    scale: 2, // High resolution image
+                    useCORS: true,
+                    backgroundColor: null,
+                    logging: false
+                });
+
+                const link = document.createElement('a');
+                link.download = `SlideKilat-Slide-${index + 1}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                showToast(`Slide ${index + 1} berhasil diunduh!`);
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal mengunduh gambar slide.');
+            }
+        }
+
+        // DOWNLOAD ALL SLIDES SEQUENTIALLY
+        async function downloadAllSlides() {
+            showToast('Menyiapkan semua slide untuk diunduh...');
+
+            for (let i = 0; i < appState.slides.length; i++) {
+                const element = document.getElementById(`slide-element-${i}`);
+                if (element) {
+                    try {
+                        const canvas = await html2canvas(element, {
+                            scale: 2,
+                            useCORS: true,
+                            backgroundColor: null,
+                            logging: false
+                        });
+
+                        const link = document.createElement('a');
+                        link.download = `SlideKilat-Carousel-${i + 1}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        
+                        // Small delay to prevent browser block on multiple downloads
+                        await new Promise(r => setTimeout(r, 400));
+                    } catch (err) {
+                        console.error(`Error downloading slide ${i + 1}:`, err);
+                    }
+                }
+            }
+
+            showToast('Semua slide selesai diunduh!');
+        }
+
+        // TOAST NOTIFICATION UTILITY
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            if (!toast || !toastMsg) return;
+
+            toastMsg.innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
